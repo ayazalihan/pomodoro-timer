@@ -1,16 +1,29 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 
 function Timer() {
   const mode = {
     pause: 0,
     start: 1,
-    default: 2,
   };
-  const [minutes, setMinutes] = useState(25);
+
+  const time = {
+    pomodoro: 25,
+    break: 5,
+  };
+  const session = {
+    study: 0,
+    rest: 1,
+  };
+
+  const [minutes, setMinutes] = useState(time.pomodoro);
   const [seconds, setSeconds] = useState(0);
-  const [message, setMessage] = useState(false);
-  const [status, setStatus] = useState(mode.default);
+  const [status, setStatus] = useState(mode.pause);
+  const [option, setOption] = useState(session.study);
   const intervalRef = useRef();
+
+  useEffect(() => {
+    document.title = `${handleMinutes}:${handleSeconds} | Pomodoro Timer`;
+  });
 
   useEffect(() => {
     if (status === mode.start) {
@@ -22,12 +35,14 @@ function Timer() {
             setSeconds(59);
             setMinutes(minutes - 1);
           } else {
-            let minutes = message ? 24 : 4;
-            let seconds = 59;
-
-            setSeconds(seconds);
-            setMinutes(minutes);
-            setMessage(!message);
+            if (option === session.study) {
+              setMinutes(time.pomodoro);
+              setSeconds(0);
+            } else if (option === session.rest) {
+              setMinutes(time.break);
+              setSeconds(0);
+            }
+            setStatus(mode.pause);
           }
         } else {
           setSeconds(seconds - 1);
@@ -36,35 +51,63 @@ function Timer() {
     } else if (status === mode.pause) {
       clearInterval(intervalRef.current);
     }
-  }, [seconds, minutes, message, status, mode.pause, mode.start]);
+  }, [
+    seconds,
+    minutes,
+    status,
+    mode.pause,
+    mode.start,
+    option,
+    session.rest,
+    session.study,
+    time.break,
+    time.pomodoro,
+  ]);
 
   const handleMinutes = minutes < 10 ? `0${minutes}` : minutes;
   const handleSeconds = seconds < 10 ? `0${seconds}` : seconds;
 
-  const startTimer = () => setStatus(mode.start);
-  const pauseTimer = () => setStatus(mode.pause);
-  const stopTimer = () => {
+  const startTimer = () => {
+    if (status === mode.pause) {
+      setStatus(mode.start);
+    } else {
+      setStatus(mode.pause);
+    }
+  };
+  const pomodoroTimer = () => {
+    setOption(session.study);
     setStatus(mode.pause);
-    setMinutes(25);
+    setMinutes(time.pomodoro);
+    setSeconds(0);
+  };
+  const breakTimer = () => {
+    setOption(session.rest);
+    setStatus(mode.pause);
+    setMinutes(time.break);
     setSeconds(0);
   };
 
   return (
-    <div className="timer">
-      <div className="message">
-        {message && <div>Short break! New session starts in:</div>}
+    <div className='timer'>
+      <div>
+        <button
+          onClick={pomodoroTimer}
+          className={'btn ' + (option === session.study ? 'selected' : null)}
+        >
+          pomodoro
+        </button>
+        <button
+          className={'btn ' + (option === session.rest ? 'selected' : null)}
+          onClick={breakTimer}
+        >
+          break
+        </button>
       </div>
-      <div className="clock">
+      <div className='clock'>
         {handleMinutes}:{handleSeconds}
       </div>
-      <button className="btn" onClick={startTimer}>
-        Start Pomodoro
-      </button>
-      <button className="btn" onClick={pauseTimer}>
-        Pause
-      </button>
-      <button className="btn" onClick={stopTimer}>
-        Stop
+      <button className='btn' onClick={startTimer}>
+        {status === mode.pause ? 'start' : 'pause'}
       </button>
     </div>
   );
